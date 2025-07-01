@@ -5,23 +5,23 @@ from datetime import datetime
 import warnings
 warnings.filterwarnings('ignore')
 
-print("📊 COMPARATEUR SIMPLE - PÉRIODES HISTORIQUES")
-print("=" * 60)
+print("🇮🇱 COMPARATEUR SIMPLE - PÉRIODES HISTORIQUES (MODÈLE ISRAÉLIEN)")
+print("=" * 70)
 
-# === 1. CHARGEMENT DU MODÈLE ===
-print("\n🤖 Chargement du modèle...")
+# === 1. CHARGEMENT DU MODÈLE ISRAÉLIEN ===
+print("\n🤖 Chargement du modèle israélien optimisé...")
 
 try:
-    with open('modele_optimise_avec_lags.pkl', 'rb') as f:
+    with open('modele_optimise_israel.pkl', 'rb') as f:
         model_data = pickle.load(f)
     
     model = model_data['model']
     scaler = model_data['scaler']
     features = model_data['features']
-    patterns_feries = model_data['patterns_feries']
     performance = model_data['performance']
     
-    print(f"✅ Modèle chargé: MAE {performance['test_mae']:.0f} kWh, R² {performance['test_r2']:.3f}")
+    print(f"✅ Modèle israélien chargé: MAE {performance['test_mae']:.0f} kWh, R² {performance['test_r2']:.3f}")
+    print(f"🇮🇱 Week-ends: Vendredi-Samedi | Jours ouvrables: Dimanche-Jeudi")
     
 except Exception as e:
     print(f"❌ Erreur modèle: {e}")
@@ -108,15 +108,12 @@ else:
     print("❌ Choix invalide")
     exit(1)
 
-# === 4. FONCTIONS ===
-def detecter_jour_ferie(date):
-    return 1 if (date.month, date.day) in patterns_feries else 0
-
-def create_features_simple(df_period):
-    """Version simplifiée de création des features"""
+# === 4. FONCTIONS ISRAÉLIENNES ===
+def create_features_israel(df_period):
+    """Création des features pour le modèle israélien optimisé"""
     df = df_period.copy()
     
-    # Features météo de base
+    # === FEATURES MÉTÉO ===
     df['temp_range'] = df['TempMax'] - df['TempMin']
     df['temp_ma_7'] = df['TempAvg'].rolling(window=7, min_periods=1).mean()
     df['temp_ma_30'] = df['TempAvg'].rolling(window=30, min_periods=1).mean()
@@ -127,7 +124,7 @@ def create_features_simple(df_period):
     df['wind_ma_7'] = df['WindSpeed'].rolling(window=7, min_periods=1).mean()
     df['pressure_ma_7'] = df['Pressure'].rolling(window=30, min_periods=1).mean()
     
-    # Seuils
+    # === SEUILS TEMPÉRATURE ===
     df['cooling_needs_light'] = np.maximum(0, df['TempAvg'] - 25.0)
     df['cooling_needs_heavy'] = np.maximum(0, df['TempAvg'] - 30.0)
     df['heating_needs'] = np.maximum(0, 25.0 - df['TempAvg'])
@@ -136,35 +133,54 @@ def create_features_simple(df_period):
     df['temp_above_28'] = (df['TempAvg'] > 28).astype(int)
     df['temp_above_30'] = (df['TempAvg'] > 30).astype(int)
     
-    # Saisons
+    # === SAISONS ===
     df['is_summer'] = ((df['Day'].dt.month >= 6) & (df['Day'].dt.month <= 8)).astype(int)
     df['is_winter'] = ((df['Day'].dt.month == 12) | (df['Day'].dt.month <= 2)).astype(int)
     df['is_mid_summer'] = (df['Day'].dt.month == 7).astype(int)
     
-    # Cycliques
+    # === JOURS DE LA SEMAINE (SYSTÈME ISRAÉLIEN) ===
+    df['is_sunday'] = (df['Day'].dt.dayofweek == 6).astype(int)  # Dimanche = jour ouvrable en Israël
+    df['is_monday'] = (df['Day'].dt.dayofweek == 0).astype(int)
+    df['is_tuesday'] = (df['Day'].dt.dayofweek == 1).astype(int)
+    df['is_wednesday'] = (df['Day'].dt.dayofweek == 2).astype(int)
+    df['is_thursday'] = (df['Day'].dt.dayofweek == 3).astype(int)
+    df['is_friday'] = (df['Day'].dt.dayofweek == 4).astype(int)    # Vendredi = week-end en Israël
+    df['is_saturday'] = (df['Day'].dt.dayofweek == 5).astype(int) # Samedi = week-end en Israël
+    
+    # === WEEK-ENDS ISRAÉLIENS (VENDREDI-SAMEDI) ===
+    df['is_weekend_israel'] = ((df['Day'].dt.dayofweek == 4) | (df['Day'].dt.dayofweek == 5)).astype(int)
+    
+    # === JOURS FÉRIÉS ISRAÉLIENS ===
+    df['is_holiday'] = 0  # Simplifié pour cet exemple
+    
+    # === FEATURES CYCLIQUES ===
     df['month_sin'] = np.sin(2 * np.pi * df['Day'].dt.month / 12)
     df['month_cos'] = np.cos(2 * np.pi * df['Day'].dt.month / 12)
     df['day_of_year_sin'] = np.sin(2 * np.pi * df['Day'].dt.dayofyear / 365)
     df['day_of_year_cos'] = np.cos(2 * np.pi * df['Day'].dt.dayofyear / 365)
     
-    # Interactions
+    # === INTERACTIONS TEMPÉRATURE-WEEK-END ISRAÉLIEN ===
+    df['temp_x_weekend_israel'] = df['TempAvg'] * df['is_weekend_israel']
+    df['temp_x_friday'] = df['TempAvg'] * df['is_friday']
+    df['temp_x_saturday'] = df['TempAvg'] * df['is_saturday']
+    df['temp_x_sunday'] = df['TempAvg'] * df['is_sunday']
+    
+    # === AUTRES INTERACTIONS ===
     df['temp_x_summer'] = df['TempAvg'] * df['is_summer']
     df['temp_x_mid_summer'] = df['TempAvg'] * df['is_mid_summer']
     df['temp_squared_x_summer'] = df['temp_squared'] * df['is_summer']
     df['temp_x_wind'] = df['TempAvg'] * df['WindSpeed']
     df['pressure_x_temp'] = df['Pressure'] * df['TempAvg']
     
-    # Temporel
+    # === TEMPOREL ===
     reference_date = pd.to_datetime('2022-01-01')
     df['time_trend'] = (df['Day'] - reference_date).dt.days / 365.25
-    df['is_weekend'] = (df['Day'].dt.dayofweek >= 5).astype(int)
-    df['is_holiday'] = df['Day'].apply(detecter_jour_ferie)
     
-    # Lags
+    # === LAGS ===
     df['consumption_lag_1'] = df['DailyAverage'].shift(1)
     df['consumption_lag_7'] = df['DailyAverage'].shift(7)
     
-    # Fin d'année
+    # === FEATURES FIN D'ANNÉE ===
     df['is_december'] = (df['Day'].dt.month == 12).astype(int)
     df['days_to_new_year'] = 32 - df['Day'].dt.day
     df['is_end_of_year'] = ((df['Day'].dt.month == 12) & (df['Day'].dt.day >= 15)).astype(int)
@@ -193,9 +209,9 @@ if len(period2_data) == 0:
 print(f"✅ Période 1: {len(period1_data)} jours")
 print(f"✅ Période 2: {len(period2_data)} jours")
 
-# Créer les features
-period1_features = create_features_simple(period1_data)
-period2_features = create_features_simple(period2_data)
+# Créer les features israéliennes
+period1_features = create_features_israel(period1_data)
+period2_features = create_features_israel(period2_data)
 
 # Nettoyer
 period1_clean = period1_features.dropna()
@@ -237,7 +253,10 @@ stats1 = {
     'max': period1_clean['predictions'].max(),
     'min': period1_clean['predictions'].min(),
     'temp': period1_clean['TempAvg'].mean(),
-    'weekends': period1_clean['is_weekend'].sum(),
+    'weekends_israel': period1_clean['is_weekend_israel'].sum(),
+    'vendredi': period1_clean['is_friday'].sum(),
+    'samedi': period1_clean['is_saturday'].sum(),
+    'dimanche': period1_clean['is_sunday'].sum(),
     'feries': period1_clean['is_holiday'].sum()
 }
 
@@ -248,7 +267,10 @@ stats2 = {
     'max': period2_clean['predictions'].max(),
     'min': period2_clean['predictions'].min(),
     'temp': period2_clean['TempAvg'].mean(),
-    'weekends': period2_clean['is_weekend'].sum(),
+    'weekends_israel': period2_clean['is_weekend_israel'].sum(),
+    'vendredi': period2_clean['is_friday'].sum(),
+    'samedi': period2_clean['is_saturday'].sum(),
+    'dimanche': period2_clean['is_sunday'].sum(),
     'feries': period2_clean['is_holiday'].sum()
 }
 
@@ -266,7 +288,10 @@ print(f"{'Moyenne/jour (kWh)':<25} | {stats1['moyenne']:>11.0f} | {stats2['moyen
 print(f"{'Max (kWh)':<25} | {stats1['max']:>11.0f} | {stats2['max']:>11.0f} | {stats1['max']-stats2['max']:>10.0f}")
 print(f"{'Min (kWh)':<25} | {stats1['min']:>11.0f} | {stats2['min']:>11.0f} | {stats1['min']-stats2['min']:>10.0f}")
 print(f"{'Temp moy (°C)':<25} | {stats1['temp']:>11.1f} | {stats2['temp']:>11.1f} | {stats1['temp']-stats2['temp']:>10.1f}")
-print(f"{'Weekends':<25} | {stats1['weekends']:>13} | {stats2['weekends']:>13} | {stats1['weekends']-stats2['weekends']:>10}")
+print(f"{'Week-ends (Ven-Sam)':<25} | {stats1['weekends_israel']:>13} | {stats2['weekends_israel']:>13} | {stats1['weekends_israel']-stats2['weekends_israel']:>10}")
+print(f"{'Vendredis':<25} | {stats1['vendredi']:>13} | {stats2['vendredi']:>13} | {stats1['vendredi']-stats2['vendredi']:>10}")
+print(f"{'Samedis':<25} | {stats1['samedi']:>13} | {stats2['samedi']:>13} | {stats1['samedi']-stats2['samedi']:>10}")
+print(f"{'Dimanches (ouvrable)':<25} | {stats1['dimanche']:>13} | {stats2['dimanche']:>13} | {stats1['dimanche']-stats2['dimanche']:>10}")
 print(f"{'Jours fériés':<25} | {stats1['feries']:>13} | {stats2['feries']:>13} | {stats1['feries']-stats2['feries']:>10}")
 
 print(f"\n🎯 SYNTHÈSE:")
@@ -305,9 +330,9 @@ print(f"\n📊 PATTERNS:")
 print(f"   • Variabilité {label1}: {period1_clean['predictions'].std():.0f} kWh/jour")
 print(f"   • Variabilité {label2}: {period2_clean['predictions'].std():.0f} kWh/jour")
 
-if stats1['weekends'] != stats2['weekends']:
-    weekend_diff = stats1['weekends'] - stats2['weekends']
-    print(f"   • Impact weekends: {weekend_diff:+d} jours")
+if stats1['weekends_israel'] != stats2['weekends_israel']:
+    weekend_diff = stats1['weekends_israel'] - stats2['weekends_israel']
+    print(f"   • Impact week-ends israéliens (Ven-Sam): {weekend_diff:+d} jours")
 
 # === 8. EXPORT SIMPLE ===
 export_simple = input("\n💾 Sauvegarder les résultats ? (o/n): ")
@@ -327,9 +352,10 @@ if export_simple.lower() in ['o', 'oui', 'y', 'yes']:
     print(f"✅ Résultats sauvés: {filename}")
 
 print("\n" + "="*70)
-print("📊 COMPARAISON TERMINÉE !")
+print("🇮🇱 COMPARAISON TERMINÉE - MODÈLE ISRAÉLIEN !")
 print("="*70)
 print(f"🎯 Différence principale: {diff_pct:+.1f}% ({diff_total:+.0f} kWh)")
 print(f"💰 Impact financier: {economie:,.0f}€")
-print(f"🤖 Modèle utilisé: MAE {performance['test_mae']:.0f} kWh (R² {performance['test_r2']:.3f})")
+print(f"🤖 Modèle israélien: MAE {performance['test_mae']:.0f} kWh (R² {performance['test_r2']:.3f})")
+print(f"📅 Week-ends: Vendredi-Samedi | Dimanches: Jours ouvrables")
 print("="*70) 

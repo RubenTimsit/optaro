@@ -10,27 +10,27 @@ warnings.filterwarnings('ignore')
 plt.style.use('default')
 sns.set_palette("husl")
 
-print("🔮 PRÉDICTEUR DE CONSOMMATION FUTURE")
-print("=" * 60)
+print("🇮🇱 PRÉDICTEUR DE CONSOMMATION FUTURE - MODÈLE ISRAÉLIEN")
+print("=" * 70)
 
-# === 1. CHARGEMENT DU MODÈLE ===
-print("\n🤖 1. Chargement du modèle optimisé...")
+# === 1. CHARGEMENT DU MODÈLE ISRAÉLIEN ===
+print("\n🤖 1. Chargement du modèle israélien optimisé...")
 
 try:
-    with open('modele_optimise_avec_lags.pkl', 'rb') as f:
+    with open('modele_optimise_israel.pkl', 'rb') as f:
         model_data = pickle.load(f)
     
     model = model_data['model']
     scaler = model_data['scaler']
     features = model_data['features']
-    patterns_feries = model_data['patterns_feries']
     performance = model_data['performance']
     
-    print(f"✅ Modèle chargé avec succès !")
+    print(f"✅ Modèle israélien chargé avec succès !")
     print(f"   • Performance: MAE {performance['test_mae']:.0f} kWh (R² {performance['test_r2']:.3f})")
+    print(f"   🇮🇱 Week-ends: Vendredi-Samedi | Jours ouvrables: Dimanche-Jeudi")
     
 except FileNotFoundError:
-    print("❌ Erreur: Modèle non trouvé.")
+    print("❌ Erreur: Modèle israélien non trouvé.")
     exit(1)
 
 # === 2. CHARGEMENT DES DONNÉES HISTORIQUES ===
@@ -142,12 +142,8 @@ def simuler_meteo_future(start_date, end_date, reference_years=[2024, 2023, 2022
     
     return pd.DataFrame(simulated_data)
 
-def detecter_jour_ferie(date):
-    """Détecte si une date est un jour férié"""
-    return 1 if (date.month, date.day) in patterns_feries else 0
-
-def create_features_prediction(df_future, df_historical):
-    """Créé des features pour la prédiction future"""
+def create_features_israel_future(df_future, df_historical):
+    """Créé des features pour la prédiction future avec système israélien"""
     df = df_future.copy()
     
     # === FEATURES MÉTÉO ===
@@ -189,11 +185,30 @@ def create_features_prediction(df_future, df_historical):
     df['temp_x_wind'] = df['TempAvg'] * df['WindSpeed']
     df['pressure_x_temp'] = df['Pressure'] * df['TempAvg']
     
+    # === JOURS DE LA SEMAINE (SYSTÈME ISRAÉLIEN) ===
+    df['is_sunday'] = (df['Day'].dt.dayofweek == 6).astype(int)  # Dimanche = jour ouvrable en Israël
+    df['is_monday'] = (df['Day'].dt.dayofweek == 0).astype(int)
+    df['is_tuesday'] = (df['Day'].dt.dayofweek == 1).astype(int)
+    df['is_wednesday'] = (df['Day'].dt.dayofweek == 2).astype(int)
+    df['is_thursday'] = (df['Day'].dt.dayofweek == 3).astype(int)
+    df['is_friday'] = (df['Day'].dt.dayofweek == 4).astype(int)    # Vendredi = week-end en Israël
+    df['is_saturday'] = (df['Day'].dt.dayofweek == 5).astype(int) # Samedi = week-end en Israël
+    
+    # === WEEK-ENDS ISRAÉLIENS (VENDREDI-SAMEDI) ===
+    df['is_weekend_israel'] = ((df['Day'].dt.dayofweek == 4) | (df['Day'].dt.dayofweek == 5)).astype(int)
+    
+    # === JOURS FÉRIÉS ISRAÉLIENS ===
+    df['is_holiday'] = 0  # Simplifié pour cet exemple
+
+    # === INTERACTIONS TEMPÉRATURE-WEEK-END ISRAÉLIEN ===
+    df['temp_x_weekend_israel'] = df['TempAvg'] * df['is_weekend_israel']
+    df['temp_x_friday'] = df['TempAvg'] * df['is_friday']
+    df['temp_x_saturday'] = df['TempAvg'] * df['is_saturday']
+    df['temp_x_sunday'] = df['TempAvg'] * df['is_sunday']
+    
     # === TEMPOREL ===
     reference_date = pd.to_datetime('2022-01-01')
     df['time_trend'] = (df['Day'] - reference_date).dt.days / 365.25
-    df['is_weekend'] = (df['Day'].dt.dayofweek >= 5).astype(int)
-    df['is_holiday'] = df['Day'].apply(detecter_jour_ferie)
     
     # === LAGS CRITIQUES - UTILISER LES DERNIÈRES DONNÉES CONNUES ===
     # Prendre les dernières valeurs de consommation connues
@@ -290,7 +305,7 @@ print(f"   Plage de température: {future_weather['TempAvg'].min():.1f}°C → {
 # === 6. CRÉATION DES FEATURES ===
 print(f"\n🔧 5. Création des features pour prédiction...")
 
-future_features = create_features_prediction(future_weather, df)
+future_features = create_features_israel_future(future_weather, df)
 print(f"✅ Features créées: {len(future_features.columns)} variables")
 
 # === 7. PRÉDICTIONS ===
@@ -315,7 +330,10 @@ stats = {
     'consommation_max': future_results['predictions'].max(),
     'consommation_min': future_results['predictions'].min(),
     'temp_moyenne': future_results['TempAvg'].mean(),
-    'nb_weekends': future_results['is_weekend'].sum(),
+    'nb_weekends_israel': future_results['is_weekend_israel'].sum(),
+    'nb_vendredis': future_results['is_friday'].sum(),
+    'nb_samedis': future_results['is_saturday'].sum(),
+    'nb_dimanches': future_results['is_sunday'].sum(),
     'nb_feries': future_results['is_holiday'].sum()
 }
 
@@ -326,7 +344,10 @@ print(f"📈 Consommation moyenne/jour:   {stats['consommation_moyenne']:,.0f} k
 print(f"🔥 Pic de consommation:         {stats['consommation_max']:,.0f} kWh")
 print(f"📉 Minimum de consommation:     {stats['consommation_min']:,.0f} kWh")
 print(f"🌡️  Température moyenne:        {stats['temp_moyenne']:.1f}°C")
-print(f"📅 Weekends dans la période:    {stats['nb_weekends']} jours")
+print(f"📅 Week-ends (Ven-Sam):         {stats['nb_weekends_israel']} jours")
+print(f"🇮🇱 Vendredis:                  {stats['nb_vendredis']} jours")
+print(f"🇮🇱 Samedis:                    {stats['nb_samedis']} jours")
+print(f"💼 Dimanches (ouvrable):        {stats['nb_dimanches']} jours")
 print(f"🎉 Jours fériés:                {stats['nb_feries']} jours")
 
 # Calcul du coût estimé
@@ -361,8 +382,8 @@ else:
 print(f"\n📊 9. Génération des graphiques...")
 
 fig, axes = plt.subplots(2, 2, figsize=(16, 12))
-fig.suptitle(f'🔮 PRÉDICTIONS FUTURES: {start_date.date()} → {end_date.date()}\n'
-             f'Modèle Optimisé (MAE {performance["test_mae"]:.0f} kWh)', 
+fig.suptitle(f'🇮🇱 PRÉDICTIONS FUTURES: {start_date.date()} → {end_date.date()}\n'
+             f'Modèle Israélien (MAE {performance["test_mae"]:.0f} kWh) - Week-ends: Ven-Sam', 
              fontsize=14, fontweight='bold')
 
 # Plot 1: Évolution temporelle des prédictions
@@ -441,11 +462,12 @@ if save_data.lower() in ['o', 'oui', 'y', 'yes']:
     print(f"✅ Prédictions sauvegardées: {csv_filename}")
 
 print("\n" + "="*70)
-print("🔮 PRÉDICTION FUTURE TERMINÉE !")
+print("🇮🇱 PRÉDICTION FUTURE TERMINÉE - MODÈLE ISRAÉLIEN !")
 print("="*70)
 print(f"📊 Période: {start_date.date()} → {end_date.date()}")
 print(f"⚡ Consommation totale: {stats['consommation_totale']:,.0f} kWh")
 print(f"💰 Coût estimé: {cout_estime:,.0f}€")
 print(f"🎯 Fiabilité modèle: R² {performance['test_r2']:.3f}")
+print(f"🇮🇱 Week-ends: Vendredi-Samedi | Dimanches: Jours ouvrables")
 print(f"📁 Graphique: {filename}")
 print("="*70) 

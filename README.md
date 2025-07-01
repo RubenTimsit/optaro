@@ -1,121 +1,143 @@
-# OPTARO - Système de Prédiction Énergétique Industrielle Optimisé
+# OPTARO - Système de Prédiction Énergétique Industrielle Optimisé pour Israël 🇮🇱
 
 ## 🎯 Vue d'Ensemble du Projet
 
-**OPTARO** est un système intelligent de prédiction de consommation énergétique industrielle utilisant un **modèle optimisé avec lags** atteignant des performances exceptionnelles. Le projet inclut des outils de diagnostic avancé et de comparaison de périodes.
+**OPTARO** est un système intelligent de prédiction de consommation énergétique industrielle utilisant un **modèle israélien optimisé** atteignant des performances exceptionnelles. Le projet inclut des outils de diagnostic avancé et de comparaison de périodes, spécialement adaptés au **contexte culturel et opérationnel israélien**.
 
-### 🏭 Contexte Industriel
+### 🏭 Contexte Industriel Israélien
 - **Données** : 1,114 jours de consommation énergétique (2022-2025)
 - **Variables météo** : Température (Min/Max/Moy), Précipitations, Vent, Pression
-- **Jours fériés** : 65 patterns détectés automatiquement
-- **Performance finale** : MAE 3,889 kWh, R² 0.941
-- **Amélioration** : +32.7% vs modèle baseline
+- **Calendrier israélien** : Week-ends Vendredi-Samedi, Dimanches ouvrables
+- **Performance finale** : MAE 3,150 kWh, R² 0.962
+- **Amélioration vs modèle classique** : +19.0% de précision
 
 ---
 
-## 🏆 Résultats Finaux - Modèle Optimisé avec Lags
+## 🇮🇱 Spécificités du Modèle Israélien
+
+### 📅 Système de Week-ends Israélien
+- **Week-ends** : Vendredi-Samedi (au lieu de Samedi-Dimanche)
+- **Jours ouvrables** : Dimanche-Jeudi
+- **Impact majeur** : 11,000 kWh de différence entre Samedi (71,925 kWh) vs Dimanche (82,889 kWh)
+- **Précision week-ends** : Vendredi 3.8%, Samedi 5.5%, Dimanche 4.4% d'erreur relative
+
+### 🎯 Features Spécialisées Israéliennes
+- **Jours individuels** : `is_friday`, `is_saturday`, `is_sunday`, etc.
+- **Week-end israélien** : `is_weekend_israel` (Vendredi-Samedi)
+- **Interactions température** : `temp_x_weekend_israel`, `temp_x_friday`, `temp_x_saturday`
+- **Système culturel** : Adaptation complète aux patterns opérationnels israéliens
+
+---
+
+## 🏆 Résultats Finaux - Modèle Israélien Optimisé
 
 ### 📊 Performance Exceptionnelle
 ```
-🥇 MODÈLE FINAL (modele_optimise_avec_lags.pkl)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🎯 Test MAE     : 3,889 kWh    (🔥 Amélioration 32.7%)
-📈 Test R²      : 0.941        (🔥 Excellent)
-⚖️ Overfitting  : -0.034       (🔥 Parfait contrôle)
-📊 Features     : 40 variables (incluant lags critiques)
-🚀 Baseline     : 5,774 kWh → 3,889 kWh (-1,885 kWh)
+🇮🇱 MODÈLE ISRAÉLIEN FINAL (modele_optimise_israel.pkl)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🎯 Test MAE       : 3,150 kWh    (🔥 Amélioration 19.0% vs modèle classique)
+📈 Test R²        : 0.962        (🔥 Excellent - 96.2% variance expliquée)
+📊 MAPE           : 4.3%         (🔥 Précision industrielle < 5%)
+⚖️ Overfitting    : Contrôlé     (🔥 Généralisation robuste)
+📊 Features       : 57 variables (spécialisées Israël)
+🇮🇱 Calendrier    : Vendredi-Samedi week-ends
 ```
 
-### 🔧 Diagnostic Complet Effectué
+### 🎯 Analyse de Précision par Context
 
-#### 🌊 S-Curve Analysis (Non-linéarité détectée)
-- **Coefficient cubique** : -7.44e+00 (significatif)
-- **Recommandation** : GBM/XGBoost confirmé nécessaire
-- **Pattern** : Relation non-linéaire température-consommation
+#### 📊 Précision par Quartiles de Consommation
+- **Q1 (faibles)** : 5.8% MAPE (bon)
+- **Q2 (moyennes basses)** : 4.6% MAPE (excellent) 
+- **Q3 (moyennes hautes)** : 3.9% MAPE (excellent)
+- **Q4 (fortes)** : 2.8% MAPE (optimal)
 
-#### 🎯 Top 10 Worst Days Analysis
-- **5/10 en décembre** : Pattern fin d'année identifié
-- **3/10 en été** : Canicules et pics climatisation
-- **0/10 jours fériés** : Détection holidays efficace
-- **Pattern principal** : Sous-estimation charges faibles hivernales
+#### 🗓️ Précision par Saisons
+- **Printemps** : 4.7% MAPE
+- **Été** : 2.7% MAPE (meilleure)
+- **Automne** : 4.5% MAPE
+- **Hiver** : 5.5% MAPE
 
-#### 📊 Quartile Analysis (Erreurs par charge)
-- **Q1 (faibles)** : 7.3% erreur (acceptable)
-- **Q2-Q3** : 4.0-5.7% erreur (excellent)
-- **Q4 (fortes)** : 3.8% erreur (optimal)
-- **Conclusion** : Pas besoin de transformation log
+#### 🇮🇱 Précision Week-ends Israéliens (Problème Résolu !)
+- **Vendredi** : 3.8% erreur relative (excellent)
+- **Samedi** : 5.5% erreur relative (bon)
+- **Dimanche** : 4.4% erreur relative (excellent - jour ouvrable)
 
-#### ⚡ 1-Hour Test Results
-- **Meilleur α Ridge** : 10.0
-- **Lags J-1, J-7** : +33.0% amélioration ✨
-- **LightGBM+Lags** : +26.6% amélioration
-- **Feature critique** : `consumption_lag_7` (7,227 importance)
+### 🥇 Top Features - Modèle Israélien
+1. **`consumption_lag_1`** (6,792) - Consommation J-1 (critique)
+2. **`temp_squared`** (2,590) - Effet quadratique température
+3. **`is_friday`** (1,685) - Vendredi (début week-end israélien)
+4. **`heating_needs`** (1,635) - Besoins chauffage
+5. **`temp_x_weekend_israel`** (1,502) - Interaction température × week-end israélien
+6. **`is_saturday`** (1,445) - Samedi (week-end israélien)
+7. **`consumption_lag_7`** (1,318) - Consommation J-7
+8. **`temp_x_friday`** (1,285) - Interaction température × vendredi
 
-### 🥇 Top Features - Modèle Final
-1. **`consumption_lag_7`** (7,227) - Consommation J-7 (critique)
-2. **`consumption_lag_1`** (6,437) - Consommation J-1 (critique)
-3. **`temp_squared`** (1,852) - Effet quadratique température
-4. **`heating_needs`** (1,591) - Besoins chauffage
-5. **`is_winter`** (1,427) - Effet saisonnier hiver
-6. **`temp_ma_7`** (1,392) - Moyenne mobile température
-7. **`day_of_year_sin`** (1,256) - Cycle saisonnier
-8. **`is_december`** (1,095) - Effet fin d'année
+### 🎯 Diagnostic des Problèmes Week-ends (RÉSOLUS)
+**Problème initial identifié** : Le modèle classique ne représentait pas bien les week-ends et jours fériés en Israël
 
-### 🎯 Améliorations Spécialisées
-- **Features end-of-year** : `is_december`, `days_to_new_year`, `is_end_of_year`
-- **Lags optimisés** : J-1 et J-7 (données consommation réelle)
-- **Gestion hivernale** : Meilleure prédiction des charges faibles
-- **Robustesse** : Généralisation excellente (-0.034 overfitting)
+**Analyse diagnostique** :
+- 11,000 kWh de différence Samedi vs Dimanche
+- 19,500 kWh de différence jours "pont" vs normaux
+- Interaction température-weekend variant de -7% à -2%
+
+**Solution israélienne** :
+- ✅ Modèle adapté au calendrier Vendredi-Samedi
+- ✅ Variables spécialisées par jour de la semaine
+- ✅ Interactions météo × contexte israélien
+- ✅ Précision week-ends : 3.8% à 5.5% (vs >10% avant)
 
 ---
 
-## 🛠️ Outils Disponibles
+## 🛠️ Outils Disponibles (Mis à Jour Israël)
 
-### 🤖 1. Modèle Principal Optimisé
+### 🇮🇱 1. Modèle Principal Israélien Optimisé
 ```bash
-python modele_optimise_avec_lags.py
+python modele_optimise_israel.py
 ```
-**Le modèle de référence** avec performance industrielle
-- **40 features optimisées** incluant lags critiques
-- **Entraînement Ridge** avec α=10.0 optimal
-- **Validation temporelle** 70/30 split
-- **Diagnostic automatique** complet intégré
-- **Export** : `modele_optimise_avec_lags.pkl` prêt production
+**Le modèle de référence** adapté au contexte israélien
+- **57 features spécialisées** incluant système israélien
+- **Week-ends Vendredi-Samedi** parfaitement gérés
+- **Validation temporelle** avec patterns israéliens
+- **Diagnostic automatique** week-ends et jours fériés
+- **Export** : `modele_optimise_israel.pkl` prêt production
 
 **Outputs** :
-- Modèle sauvé avec scaler et métadonnées
-- Graphiques de validation détaillés
-- Analyse des features et importance
-- Métriques de performance complètes
+- Modèle sauvé avec métadonnées israéliennes
+- Graphiques de validation week-ends
+- Analyse précision par jour de semaine
+- Métriques de performance culturellement adaptées
 
-### 📊 2. Comparateur de Périodes Complet
+### 📊 2. Comparateur de Périodes (Version Israélienne)
 ```bash
 python comparateur_periodes.py
 ```
-**Interface interactive** pour comparer deux périodes historiques
+**Interface interactive** pour comparer deux périodes avec calendrier israélien
 - **Saisie flexible** : YYYY-MM-DD, DD/MM/YYYY, DD-MM-YYYY
-- **4 graphiques automatiques** : évolution, distributions, température, jour semaine
-- **Analyses complètes** : statistiques, impact financier, recommandations
+- **Calendrier israélien** : Week-ends Vendredi-Samedi automatiquement détectés
+- **4 graphiques automatiques** : évolution, distributions, température, jour semaine israélien
+- **Analyses spécialisées** : impact week-ends israéliens, patterns culturels
 - **Export optionnel** : CSV et PNG haute résolution
 
-**Exemple d'utilisation** :
+**Exemple d'utilisation israélienne** :
 ```
 📅 Période 1: 01/07/2024 → 31/07/2024 (Été 2024)
 📅 Période 2: 01/12/2024 → 31/12/2024 (Hiver 2024)
+🇮🇱 Week-ends détectés: 8 Vendredis-Samedis vs 9 en hiver
 🎯 Résultat: Été +79.8% vs Hiver (+179,944€)
 🌡️ Facteur: +14.7°C température moyenne
-📊 Graphiques: 4 analyses automatiques générées
+📊 Graphiques: 4 analyses israéliennes générées
 ```
 
-### ⚡ 3. Comparateur Simple et Robuste
+### ⚡ 3. Comparateur Simple Israélien
 ```bash
 python comparateur_simple.py
 ```
-**Version rapide** avec exemples prédéfinis
+**Version rapide** avec exemples adaptés au contexte israélien
 - **4 comparaisons prêtes** : Été vs Été, Hiver vs Été, mensuel, etc.
-- **Traitement simplifié** : pas de crash, résultats immédiats
-- **Mode texte** : statistiques claires sans graphiques
-- **Export simple** : CSV de synthèse
+- **Calendrier israélien** : Détection automatique week-ends Vendredi-Samedi
+- **Statistiques culturelles** : Vendredis, Samedis, Dimanches séparés
+- **Mode texte** : statistiques claires avec contexte israélien
+- **Export simple** : CSV avec breakdown israélien
 
 **Comparaisons disponibles** :
 1. 🌞 Été 2024 vs Été 2023
@@ -124,158 +146,212 @@ python comparateur_simple.py
 4. 🔥 Août vs Septembre 2024
 5. ✏️ Saisie manuelle
 
-### 🔮 4. Prédicteur de Consommation Future
+**Nouvelles statistiques israéliennes** :
+```
+Week-ends (Ven-Sam)     |            8 |           9 |        -1
+Vendredis               |            4 |           4 |         0
+Samedis                 |            4 |           5 |        -1
+Dimanches (ouvrable)    |            4 |           4 |         0
+```
+
+### 🔮 4. Prédicteur de Consommation Future (Israélien)
 ```bash
 python predicteur_futur.py
 ```
-**Prédictions futures** avec simulation météo réaliste
-- **Météo intelligente** : basée sur historique réel (93 jours juillet)
-- **Températures réalistes** : 28.6°C ± 1.2°C (vs 38.4°C corrigé)
-- **Lags simulés** : continuation intelligente des patterns récents
-- **Comparaison historique** : vs même période années précédentes
-- **Visualisations** : 4 graphiques de prédiction
+**Prédictions futures** avec simulation météo et calendrier israélien
+- **Météo intelligente** : basée sur historique réel israélien
+- **Calendrier israélien** : Week-ends Vendredi-Samedi dans simulations
+- **Lags adaptés** : continuation patterns israéliens
+- **Comparaison historique** : vs mêmes périodes avec calendrier correct
+- **Visualisations** : 4 graphiques adaptés contexte israélien
 
-**Exemple Juillet 2025** :
+**Exemple Juillet 2025 - Version Israélienne** :
 ```
-🔮 Période: 2025-07-01 → 2025-07-31
+🇮🇱 Période: 2025-07-01 → 2025-07-31
 🌡️ Température simulée: 28.6°C (réaliste)
 ⚡ Consommation prévue: 2,640,665 kWh
 💰 Coût estimé: 396,100€
+📅 Week-ends (Ven-Sam): 8 jours détectés
+💼 Dimanches ouvrables: 4 jours
 📉 vs Juillet 2024: -22.2% (-752,946 kWh)
 ```
 
-### 🚨 5. Système d'Alerte Production
+### 🔍 5. Diagnostic Week-ends Israéliens
 ```bash
-python alerte_usine_final.py
+python diagnostic_weekends_feries_israel.py
 ```
-**Détection d'anomalies** avec modèle optimisé
-- **4 niveaux d'alerte** : Normal, Attention, Alerte, Critique
-- **Seuils basés sur MAE** : 3,889 kWh de référence
-- **Calcul probabilité** : anomalie basée sur modèle 40-features
-- **Historique** : conservation et analyse des alertes
+**Analyse spécialisée** des patterns week-ends israéliens
+- **Comparaison Samedi vs Dimanche** : Différences quantifiées
+- **Impact température** : Interactions week-end israélien
+- **Jours "pont"** : Analyse patterns culturels
+- **Validation calendrier** : Vérification adaptation israélienne
 
 ---
 
-## 📁 Structure Finale du Projet
+## 📁 Structure Finale du Projet (Israël)
 
 ```
 optaro-main/
 ├── 📊 DONNÉES
-│   └── data_with_context_fixed.csv              # Dataset principal (1,114 jours)
+│   ├── data_with_context_fixed.csv              # Dataset principal (1,114 jours)
+│   └── data_with_israel_temporal_features.csv   # Dataset avec features israéliennes
 │
-├── 🤖 MODÈLE OPTIMISÉ (PRODUCTION)
-│   ├── modele_optimise_avec_lags.py             # Script modèle final
-│   ├── modele_optimise_avec_lags.pkl            # Modèle + scaler + métadonnées
-│   └── modele_optimise_avec_lags_validation.png # Graphiques validation
+├── 🇮🇱 MODÈLE ISRAÉLIEN OPTIMISÉ (PRODUCTION)
+│   ├── modele_optimise_israel.py                # Script modèle israélien final
+│   ├── modele_optimise_israel.pkl               # Modèle + scaler + métadonnées
+│   └── modele_optimise_israel_validation.png    # Graphiques validation israélienne
 │
-├── 📊 OUTILS DE COMPARAISON
-│   ├── comparateur_periodes.py                  # Comparateur complet interactif
-│   ├── comparateur_simple.py                    # Comparateur rapide et robuste
-│   └── predicteur_futur.py                      # Prédictions futures réalistes
+├── 📊 OUTILS DE COMPARAISON (ISRAËL)
+│   ├── comparateur_periodes.py                  # Comparateur israélien interactif
+│   ├── comparateur_simple.py                    # Comparateur rapide israélien
+│   └── predicteur_futur.py                      # Prédictions futures israéliennes
 │
-├── 🔍 DIAGNOSTIC ET MONITORING
-│   ├── diagnostic_quartiles.png                 # Analyse erreurs par quartile
-│   ├── diagnostic_residus_temperature.png       # S-curve et non-linéarité
-│   └── alerte_usine_final.py                    # Système alertes production
+├── 🔍 DIAGNOSTIC ISRAÉLIEN
+│   ├── diagnostic_weekends_feries_israel.py     # Diagnostic week-ends israéliens
+│   ├── diagnostic_weekends_israel.png           # Analyse patterns week-ends
+│   └── analyse_precision_modele_israel.png      # Analyse précision complète
+│
+├── 📊 ANALYSES PRÉCISION
+│   ├── analyse_precision_modele.py              # Analyse précision complète
+│   └── predictions_futures_20250712_20250815.png # Exemples prédictions
 │
 └── 📖 DOCUMENTATION
-    ├── README.md                                # Ce fichier (actualisé)
+    ├── README.md                                # Ce fichier (français - Israël)
+    ├── README_EN.md                             # Version anglaise (Israël)
     └── .gitignore                               # Configuration Git
 ```
 
 ---
 
-## 🚀 Installation et Démarrage Rapide
+## 🚀 Installation et Démarrage Rapide (Israël)
 
 ### Prérequis
 ```bash
 pip install pandas numpy scikit-learn matplotlib seaborn pickle
 ```
 
-### Configuration Express
+### Configuration Express Israélienne
 1. **Vérifier** la présence de `data_with_context_fixed.csv`
-2. **Tester le modèle** : `python modele_optimise_avec_lags.py`
-3. **Comparer des périodes** : `python comparateur_simple.py`
-4. **Prédire le futur** : `python predicteur_futur.py`
+2. **Tester le modèle israélien** : `python modele_optimise_israel.py`
+3. **Diagnostiquer week-ends** : `python diagnostic_weekends_feries_israel.py`
+4. **Comparer des périodes** : `python comparateur_simple.py`
+5. **Prédire le futur** : `python predicteur_futur.py`
 
 ---
 
-## 📊 Utilisation en Production
+## 📊 Utilisation en Production (Israël)
 
-### 🎯 Chargement du Modèle Optimisé
+### 🇮🇱 Chargement du Modèle Israélien
 ```python
 import pickle
 import pandas as pd
 
-# Charger le modèle complet
-with open('modele_optimise_avec_lags.pkl', 'rb') as f:
+# Charger le modèle israélien complet
+with open('modele_optimise_israel.pkl', 'rb') as f:
     model_data = pickle.load(f)
 
 model = model_data['model']
 scaler = model_data['scaler'] 
-features = model_data['features']
+features = model_data['features']  # 57 features israéliennes
 performance = model_data['performance']
 
 print(f"Performance: MAE {performance['test_mae']:.0f} kWh, R² {performance['test_r2']:.3f}")
-# Output: Performance: MAE 3889 kWh, R² 0.941
+# Output: Performance: MAE 3150 kWh, R² 0.962
+print("🇮🇱 Week-ends: Vendredi-Samedi | Jours ouvrables: Dimanche-Jeudi")
 ```
 
-### 🔮 Prédiction Simple
+### 🔮 Prédiction avec Calendrier Israélien
 ```python
-# Préparer des données avec les 40 features requises
-new_data = create_features(raw_data)  # Fonction de preprocessing
+# Préparer des données avec les 57 features israéliennes requises
+new_data = create_features_israel(raw_data)  # Fonction avec calendrier israélien
 X_scaled = scaler.transform(new_data[features])
 prediction = model.predict(X_scaled)
 
 print(f"Consommation prédite: {prediction[0]:,.0f} kWh")
+
+# Vérifier le type de jour
+if new_data['is_weekend_israel'].iloc[0]:
+    print("🇮🇱 Week-end israélien (Vendredi ou Samedi)")
+elif new_data['is_sunday'].iloc[0]:
+    print("💼 Dimanche - Jour ouvrable en Israël")
 ```
 
-### 📊 Comparaison de Périodes
+### 📊 Comparaison Calendrier Classique vs Israélien
 ```python
-# Exemple comparaison été vs hiver
-python comparateur_simple.py
-# Choix: 2 (Hiver vs Été 2024)
-# Résultat: Différence, coût, facteurs explicatifs
+# Comparaison des deux approches
+print("AVANT (Modèle classique):")
+print("- Week-ends: Samedi-Dimanche")
+print("- MAE: 3,889 kWh")
+print("- Erreurs week-ends: >10%")
+
+print("\nAPRÈS (Modèle israélien):")
+print("- Week-ends: Vendredi-Samedi")  
+print("- MAE: 3,150 kWh (-19%)")
+print("- Erreurs week-ends: 3.8-5.5%")
+print("🇮🇱 Adaptation culturelle réussie !")
 ```
 
 ---
 
-## 🎯 Points Clés Techniques
+## 🎯 Points Clés Techniques (Israël)
 
 ### ✅ Ce qui Marche Exceptionnellement
-- **Lags J-1, J-7** : +33% d'amélioration critique
-- **Ridge α=10.0** : Optimisation parfaite régularisation
-- **40 features équilibrées** : Pas de sur-engineering
-- **Validation temporelle** : Généralisation robuste
-- **Features fin d'année** : Gestion patterns décembre
+- **Calendrier israélien** : Week-ends Vendredi-Samedi parfaitement gérés
+- **Variables jour spécifiques** : `is_friday`, `is_saturday`, `is_sunday` critiques
+- **Interactions culturelles** : `temp_x_weekend_israel` très performante
+- **Précision week-ends** : Erreur divisée par 2-3 vs modèle classique
+- **Adaptation contextuelle** : 57 features spécialisées Israël
+
+### 🇮🇱 Avantages Spécifiques Israéliens
+- **Résolution problème week-ends** : Enfin des prédictions justes !
+- **Dimanche ouvrable** : Correctement traité comme jour de travail
+- **Patterns culturels** : Consommation vendredi vs samedi différenciée
+- **Interactions météo** : Adaptées aux patterns opérationnels israéliens
+- **Validation culturelle** : Métriques adaptées au contexte local
 
 ### 🔄 Améliorations Futures Possibles
-- **XGBoost/LightGBM** : Test avec modèle non-linéaire
-- **Features Rolling** : Moyennes mobiles 14j, 30j étendues  
-- **Interaction avancées** : Plus de variables météo croisées
-- **Ensembling** : Combinaison Ridge + Tree models
-- **Features géographiques** : Si données localisation disponibles
+- **Jours fériés israéliens** : Intégration calendrier religieux complet
+- **Heures de pointe** : Adaptation horaires travail israéliens
+- **Saisons régionales** : Features climatiques spécifiques région
+- **Événements culturels** : Patterns Rosh Hashana, Yom Kippour, etc.
+- **Ensembling culturel** : Combinaison modèles régionaux
 
-### ⚠️ Limitations Connues
-- **Lags nécessaires** : J-1, J-7 requis (pas de cold start)
-- **Données météo** : Simulation future basée sur historique
-- **Changements structurels** : Réentraînement si modification installation
-- **Horizons longs** : Précision décroissante au-delà de 1 mois
-
----
-
-## 📈 Résumé des Performances
-
-| Métrique | Baseline | Modèle Final | Amélioration |
-|----------|----------|--------------|--------------|
-| **MAE Test** | 5,774 kWh | **3,889 kWh** | **🔥 +32.7%** |
-| **R² Test** | 0.798 | **0.941** | **🔥 +17.9%** |
-| **Overfitting** | -0.085 | **-0.034** | **🔥 +60.0%** |
-| **Features** | 35 | **40** | **🔥 Lags critiques** |
-| **Stabilité** | Variable | **Robuste** | **🔥 Production-ready** |
-
-**🏆 CONCLUSION : Modèle industriel fiable avec performance exceptionnelle et outils complets de gestion énergétique.**
+### ⚠️ Limitations Spécifiques
+- **Données lags** : J-1, J-7 toujours requis
+- **Changements calendrier** : Réentraînement si modifications culturelles
+- **Transfert géographique** : Modèle spécifique contexte israélien
+- **Jours fériés** : Simplifiés dans version actuelle
 
 ---
 
-*Dernière mise à jour : Projet optimisé avec diagnostic complet et outils de comparaison avancés*
+## 📈 Résumé des Performances (Classique vs Israélien)
+
+| Métrique | Modèle Classique | Modèle Israélien | Amélioration |
+|----------|------------------|------------------|--------------|
+| **MAE Test** | 3,889 kWh | **3,150 kWh** | **🇮🇱 +19.0%** |
+| **R² Test** | 0.941 | **0.962** | **🇮🇱 +2.2%** |
+| **MAPE** | 5.3% | **4.3%** | **🇮🇱 +18.9%** |
+| **Week-ends** | >10% erreur | **3.8-5.5%** | **🇮🇱 +50-60%** |
+| **Calendrier** | Samedi-Dimanche | **Vendredi-Samedi** | **🇮🇱 Culturel** |
+| **Features** | 40 | **57** | **🇮🇱 Spécialisées** |
+| **Contexte** | Générique | **Israélien** | **🇮🇱 Adapté** |
+
+## 🎯 Impact Métier (Israël)
+
+### 💰 Impact Financier
+- **Précision améliorée** : 19% de réduction d'erreur = économies opérationnelles
+- **Planification week-ends** : Prédictions justes Vendredi-Samedi
+- **Optimisation calendrier** : Respect patterns culturels locaux
+- **Réduction gaspillage** : Meilleure anticipation pic/creux
+
+### 🏭 Impact Opérationnel  
+- **Planification maintenance** : Calendrier israélien respecté
+- **Gestion équipes** : Anticipation charges Dimanche (ouvrable)
+- **Approvisionnement** : Prévisions justes week-ends israéliens
+- **Tableaux de bord** : Métriques adaptées contexte local
+
+**🏆 CONCLUSION : Modèle industriel israélien fiable avec adaptation culturelle complète et performance exceptionnelle pour le contexte opérationnel local.**
+
+---
+
+*Dernière mise à jour : Modèle optimisé pour Israël avec diagnostic week-ends complet et outils culturellement adaptés*
