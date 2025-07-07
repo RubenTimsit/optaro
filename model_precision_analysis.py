@@ -43,7 +43,7 @@ except Exception as e:
 print("\n📊 2. Loading test data for analysis...")
 
 try:
-    df = pd.read_csv("data_with_israel_temporal_features.csv")
+    df = pd.read_csv("data_with_context_fixed.csv")
     df['Day'] = pd.to_datetime(df['Day'])
     df = df.sort_values('Day').reset_index(drop=True)
     
@@ -54,18 +54,108 @@ except Exception as e:
     print(f"❌ Error loading data: {e}")
     exit(1)
 
+# === 2.5. CREATE ISRAELI FEATURES ===
+def create_israeli_features(df):
+    """Create Israeli specialized features for energy prediction"""
+    df = df.copy()
+    
+    # === TEMPERATURE FEATURES ===
+    df['temp_range'] = df['TempMax'] - df['TempMin']
+    df['temp_ma_7'] = df['TempAvg'].rolling(window=7, min_periods=3).mean()
+    df['temp_ma_30'] = df['TempAvg'].rolling(window=30, min_periods=15).mean()
+    df['temp_squared'] = df['TempAvg'] ** 2
+    
+    # === PRECIPITATION FEATURES ===
+    df['precip_ma_7'] = df['Precip'].rolling(window=7, min_periods=3).mean()
+    df['has_rain'] = (df['Precip'] > 0).astype(int)
+    
+    # === WIND FEATURES ===
+    df['wind_ma_7'] = df['WindSpeed'].rolling(window=7, min_periods=3).mean()
+    
+    # === PRESSURE FEATURES ===
+    df['pressure_ma_7'] = df['Pressure'].rolling(window=7, min_periods=3).mean()
+    
+    # === COOLING AND HEATING NEEDS ===
+    df['cooling_needs_light'] = np.maximum(0, df['TempAvg'] - 25.0)
+    df['cooling_needs_heavy'] = np.maximum(0, df['TempAvg'] - 30.0)
+    df['heating_needs'] = np.maximum(0, 25.0 - df['TempAvg'])
+    
+    df['temp_above_25'] = (df['TempAvg'] > 25).astype(int)
+    df['temp_above_28'] = (df['TempAvg'] > 28).astype(int)
+    df['temp_above_30'] = (df['TempAvg'] > 30).astype(int)
+    
+    # === SEASONS ===
+    df['is_summer'] = ((df['Day'].dt.month >= 6) & (df['Day'].dt.month <= 8)).astype(int)
+    df['is_winter'] = ((df['Day'].dt.month == 12) | (df['Day'].dt.month <= 2)).astype(int)
+    df['is_mid_summer'] = (df['Day'].dt.month == 7).astype(int)
+    
+    # === ISRAELI WEEKDAY SYSTEM ===
+    df['is_sunday'] = (df['Day'].dt.dayofweek == 6).astype(int)      # Sunday = workday in Israel
+    df['is_monday'] = (df['Day'].dt.dayofweek == 0).astype(int)
+    df['is_tuesday'] = (df['Day'].dt.dayofweek == 1).astype(int)
+    df['is_wednesday'] = (df['Day'].dt.dayofweek == 2).astype(int)
+    df['is_thursday'] = (df['Day'].dt.dayofweek == 3).astype(int)
+    df['is_friday'] = (df['Day'].dt.dayofweek == 4).astype(int)      # Friday = weekend in Israel
+    df['is_saturday'] = (df['Day'].dt.dayofweek == 5).astype(int)    # Saturday = weekend in Israel
+    
+    # === ISRAELI WEEKENDS (FRIDAY-SATURDAY) ===
+    df['is_weekend_israel'] = ((df['Day'].dt.dayofweek == 4) | (df['Day'].dt.dayofweek == 5)).astype(int)
+    
+    # === ISRAELI HOLIDAYS ===
+    df['is_holiday'] = 0  # Simplified for this version
+    
+    # === CYCLICAL FEATURES ===
+    df['month_sin'] = np.sin(2 * np.pi * df['Day'].dt.month / 12)
+    df['month_cos'] = np.cos(2 * np.pi * df['Day'].dt.month / 12)
+    df['day_of_year_sin'] = np.sin(2 * np.pi * df['Day'].dt.dayofyear / 365)
+    df['day_of_year_cos'] = np.cos(2 * np.pi * df['Day'].dt.dayofyear / 365)
+    
+    # === ISRAELI CULTURAL INTERACTIONS ===
+    df['temp_x_weekend_israel'] = df['TempAvg'] * df['is_weekend_israel']
+    df['temp_x_friday'] = df['TempAvg'] * df['is_friday']
+    df['temp_x_saturday'] = df['TempAvg'] * df['is_saturday']
+    df['temp_x_sunday'] = df['TempAvg'] * df['is_sunday']
+    
+    # === OTHER INTERACTIONS ===
+    df['temp_x_summer'] = df['TempAvg'] * df['is_summer']
+    df['temp_x_mid_summer'] = df['TempAvg'] * df['is_mid_summer']
+    df['temp_squared_x_summer'] = df['temp_squared'] * df['is_summer']
+    df['temp_x_wind'] = df['TempAvg'] * df['WindSpeed']
+    df['pressure_x_temp'] = df['Pressure'] * df['TempAvg']
+    
+    # === TEMPORAL FEATURES ===
+    reference_date = pd.to_datetime('2022-01-01')
+    df['time_trend'] = (df['Day'] - reference_date).dt.days / 365.25
+    
+    # === LAG FEATURES ===
+    df['consumption_lag_1'] = df['DailyAverage'].shift(1)
+    df['consumption_lag_7'] = df['DailyAverage'].shift(7)
+    
+    # === END-OF-YEAR FEATURES ===
+    df['is_december'] = (df['Day'].dt.month == 12).astype(int)
+    df['days_to_new_year'] = 32 - df['Day'].dt.day
+    df['is_end_of_year'] = ((df['Day'].dt.month == 12) & (df['Day'].dt.day >= 15)).astype(int)
+    
+    return df
+
+print("🇮🇱 Creating Israeli specialized features...")
+df_features = create_israeli_features(df)
+
 # === 3. DATA PREPARATION ===
 print("\n🔧 3. Preparing data for prediction...")
 
 # Remove NaN values
-df_clean = df.dropna()
+df_clean = df_features.dropna()
 
 # Split data (same as training: 70/30)
 split_idx = int(len(df_clean) * 0.7)
 split_date = df_clean.iloc[split_idx]['Day']
 
+# Filter features to exclude identification columns
+filtered_features = [f for f in features if f not in ['SourceID', 'QuantityID', 'SourceTypeName']]
+
 # Test set
-X_test = df_clean.iloc[split_idx:][features]
+X_test = df_clean.iloc[split_idx:][filtered_features]
 y_test = df_clean.iloc[split_idx:]['DailyAverage']
 dates_test = df_clean.iloc[split_idx:]['Day']
 
@@ -123,21 +213,17 @@ print("\n🇮🇱 6. Israeli weekend performance analysis...")
 test_data = df_clean.iloc[split_idx:].copy()
 test_data['predictions'] = y_pred
 
-# Define Israeli day types
-test_data['is_friday'] = (test_data['Day'].dt.dayofweek == 4).astype(int)
-test_data['is_saturday'] = (test_data['Day'].dt.dayofweek == 5).astype(int)
-test_data['is_sunday'] = (test_data['Day'].dt.dayofweek == 6).astype(int)
-test_data['is_weekend_israel'] = ((test_data['Day'].dt.dayofweek == 4) | 
-                                 (test_data['Day'].dt.dayofweek == 5)).astype(int)
+# Israeli day types are already defined in the features
+# test_data already has: is_friday, is_saturday, is_sunday, is_weekend_israel
 
 # Analyze by day type
 day_analysis = {}
 day_types = {
     'Sunday': 'is_sunday',
-    'Monday': (test_data['Day'].dt.dayofweek == 0),
-    'Tuesday': (test_data['Day'].dt.dayofweek == 1),
-    'Wednesday': (test_data['Day'].dt.dayofweek == 2),
-    'Thursday': (test_data['Day'].dt.dayofweek == 3),
+    'Monday': 'is_monday',
+    'Tuesday': 'is_tuesday',
+    'Wednesday': 'is_wednesday',
+    'Thursday': 'is_thursday',
     'Friday': 'is_friday',
     'Saturday': 'is_saturday'
 }
@@ -148,11 +234,7 @@ print(f"{'Day':<12} {'Count':<6} {'MAE (kWh)':<10} {'MAPE (%)':<9} {'R²':<6}")
 print("-" * 60)
 
 for day_name, mask_col in day_types.items():
-    if isinstance(mask_col, str):
-        mask = test_data[mask_col] == 1
-    else:
-        mask = mask_col
-    
+    mask = test_data[mask_col] == 1
     day_data = test_data[mask]
     
     if len(day_data) > 0:

@@ -117,9 +117,10 @@ def create_israeli_features(df):
 # Create Israeli features
 df_features = create_israeli_features(df)
 
-# Select feature columns (exclude date and target)
+# Select feature columns (exclude date, target, and identification columns)
 feature_columns = [col for col in df_features.columns 
-                  if col not in ['Day', 'DailyAverage'] and not col.startswith('Temp')]
+                  if col not in ['Day', 'DailyAverage', 'SourceID', 'QuantityID', 'SourceTypeName'] 
+                  and not col.startswith('Temp')]
 
 print(f"✅ Israeli features created: {len(feature_columns)} variables")
 print(f"   🇮🇱 Key Israeli features: is_weekend_israel, is_friday, is_saturday, is_sunday")
